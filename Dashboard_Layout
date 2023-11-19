@@ -1,0 +1,85 @@
+library(shiny)
+library(shinydashboard)
+
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    menuItem("Deutschland", tabName = "deutschland"),
+    menuItem("Europa", tabName = "europa"),
+    menuItem("Welt", tabName = "welt")
+  )
+)
+
+body <- dashboardBody(
+  tabItems(
+    tabItem(tabName = "deutschland",
+            h2("Informationen zur globalen COVID-19-Pandemie innerhalb Deutschlands nach Daten der WHO, inklusive Fallzahlen, Todesfälle und Impfungen.")
+    ),
+    
+    tabItem(tabName = "europa",
+            h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO.")
+    ),
+    
+    tabItem(tabName = "welt",
+            h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle sowie Impfungen nach den Berichten der WHO.")
+    )
+  )
+)
+
+ui <- dashboardPage(
+  dashboardHeader(title = 'Globale COVID-19-Pandemie Datenzusammentragung'),
+  sidebar,
+  body
+)
+
+server <- function(input, output, session) {
+  output$myDropdownMenu <- renderMenu({
+    dropdownMenu(type = "messages",
+                 messageItem(
+                   from = "Sales Dept",
+                   message = "Sales are steady this month."
+                 ),
+                 messageItem(
+                   from = "New User",
+                   message = "How do I register?",
+                   icon = icon("question"),
+                   time = "13:45"
+                 ),
+                 messageItem(
+                   from = "Support",
+                   message = "The new server is ready.",
+                   icon = icon("life-ring"),
+                   time = "2014-12-01"
+                 )
+    )
+  })
+  
+  output$myNotificationsMenu <- renderMenu({
+    dropdownMenu(type = "notifications",
+                 notificationItem(
+                   text = "5 new users today",
+                   icon("users")
+                 ),
+                 notificationItem(
+                   text = "12 items delivered",
+                   icon("truck"),
+                   status = "success"
+                 ),
+                 notificationItem(
+                   text = "Server load at 86%",
+                   icon = icon("exclamation-triangle"),
+                   status = "warning"
+                 )
+    )
+  })
+  
+  output$userpanel <- renderUI({
+    if (!is.null(session$user)) {
+      sidebarUserPanel(
+        span("Logged in as ", session$user),
+        subtitle = a(icon("sign-out"), "Logout", href="__logout__")
+      )
+    }
+  })
+}
+
+shinyApp(ui = ui, server = server)
