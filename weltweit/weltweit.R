@@ -2,6 +2,7 @@ library(dplyr)
 library(lubridate)
 library(plotly)
 library(shiny)
+library(scales)
 
 data <- read.csv(file="C:/Users/gimmi/OneDrive/Universität/5. Semester_WS23/Datenbanken und Datenanalyse/WHO-COVID-19-global-data.csv", 
                  sep =",", dec = ",", header = TRUE)
@@ -58,7 +59,7 @@ server <- function(input, output) {
       z = ~Total_Cumulative_Cases,
       color = ~Total_Cumulative_Cases,
       colorscale = "Plasma",
-      text = ~paste(Country, "<br>Total Cases: ", Total_Cumulative_Cases),
+      text = ~paste(Country, "<br>Total Cases: ", scales::comma(Total_Cumulative_Cases)),
       hoverinfo = "text"
     )
     
@@ -83,7 +84,7 @@ server <- function(input, output) {
       z = ~Total_Cumulative_deaths,
       color = ~Total_Cumulative_deaths,
       colorscale = "Plasma",
-      text = ~paste(Country, "<br>Total Cases: ", Total_Cumulative_deaths),
+      text = ~paste(Country, "<br>Total Cases: ", scales::comma(Total_Cumulative_deaths)),
       hoverinfo = "text"
     )
     
