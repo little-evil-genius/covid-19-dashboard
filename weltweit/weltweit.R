@@ -27,12 +27,12 @@ ui <- fluidPage(
   titlePanel("COVID-19 Dashboard"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("selected_year", "Wähle ein Jahr:", choices = unique(data_cases$Year))
+      selectInput("selected_year", "Jahr (2020-2023):", choices = unique(data_cases$Year))
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Kumulierte Fälle", plotlyOutput("world_map_cases")),
-        tabPanel("Kumulierte Todesfälle", plotlyOutput("world_map_deaths"))
+        tabPanel("Kumulierte Fallzahlen nach Land", plotlyOutput("world_map_cases")),
+        tabPanel("Kumulierte Todesfälle nach Land", plotlyOutput("world_map_deaths"))
       )
     )
   )
@@ -64,7 +64,7 @@ server <- function(input, output) {
     )
     
     fig <- fig %>% layout(
-      title = paste("Kumulierte Fälle nach Land im Jahr", input$selected_year),
+      #title = paste("Kumulierte Fälle nach Land im Jahr", input$selected_year),
       geo = list(
         showframe = FALSE,
         showcoastlines = TRUE,
@@ -89,7 +89,7 @@ server <- function(input, output) {
     )
     
     fig <- fig %>% layout(
-      title = paste("Kumulierte Todesfälle nach Land im Jahr", input$selected_year),
+      #title = paste("Kumulierte Todesfälle nach Land im Jahr", input$selected_year),
       geo = list(
         showframe = FALSE,
         showcoastlines = TRUE,
