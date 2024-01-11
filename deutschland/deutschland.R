@@ -8,7 +8,7 @@ library(scales)
 
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
-impfungen <- read_csv('export-collection-all-properties-impfqoute-bundeslaender-2024-01-11.csv')
+impfungen <- read_csv('impfen-bundeslaender.csv')
 
 # Konvertiere das Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
 daten$Berichtsdatum <- as.Date(paste0(daten$Berichtsdatum, "-01"))
@@ -22,7 +22,7 @@ daten$MonatName <- factor(monatsnamen[as.integer(daten$Monat)], levels = monatsn
 
 # Stelle sicher, dass 'Impfquote' und 'Impfungen' als numerisch eingelesen werden
 impfungen$Impfquote <- as.numeric(as.character(impfungen$Impfquote))
-impfungen$Impfungen <- as.numeric(as.character(impfungen$Impfung))
+impfungen$Impfungen <- as.numeric(as.character(impfungen$Impfungen))
 
 # Benutzerdefinierte Funktion zur Formatierung der Zahlen für den Tooltip
 format_number_for_tooltip <- function(number) {
@@ -89,12 +89,15 @@ server <- function(input, output) {
   
   # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
   gefilterteDaten <- reactive({
-    daten %>% filter(Jahr == input$jahrInput)
+    daten %>%
+      filter(Jahr == input$jahrInput) %>%
+      mutate(Faelle_tooltip = sapply(Faelle_gesamt, format_number_for_tooltip),
+             Todesfaelle_tooltip = sapply(Todesfaelle_gesamt, format_number_for_tooltip))
   })
   
   # Erstelle das interaktive Säulendiagramm für Fälle
   output$faellePlot <- renderPlotly({
-    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt)) +
+    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt, text = Faelle_tooltip)) +
       geom_bar(stat = "identity", fill = "blue") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Fälle") +
@@ -102,12 +105,12 @@ server <- function(input, output) {
       ggtitle(paste("COVID-19 Fälle im Jahr", input$jahrInput)) +
       coord_flip()
     
-    ggplotly(p, tooltip = c("x")) %>% config(displayModeBar = FALSE)
+    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar = FALSE)
   })
   
   # Erstelle das interaktive Säulendiagramm für Todesfälle
   output$todesfaellePlot <- renderPlotly({
-    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt)) +
+    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt, text = Todesfaelle_tooltip)) +
       geom_bar(stat = "identity", fill = "red") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Todesfälle") +
@@ -115,7 +118,7 @@ server <- function(input, output) {
       ggtitle(paste("COVID-19 Todesfälle im Jahr", input$jahrInput)) +
       coord_flip()
     
-    ggplotly(p, tooltip = c("x")) %>% config(displayModeBar=FALSE)
+    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar=FALSE)
   })
   
   # Erstelle das Balkendiagramm für Impfdaten
@@ -127,10 +130,16 @@ server <- function(input, output) {
       impfungen$Impfungen
     }
     
+    # Erstelle eine neue Spalte im DataFrame für den Tooltip-Text
+    impfungen$tooltip_text <- if (input$auswahl == "Impfquote") {
+      paste(impfungen$Bundesland, ': ', impfungen$Impfquote, '%', sep = '')
+    } else {
+      paste(impfungen$Bundesland, ': ', sapply(impfungen$Impfungen, format_number_for_tooltip), sep = '')
+    }
+    
     # Erstelle das Balkendiagramm mit angepasstem Tooltip-Text
     p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen,
-                               text = paste(Bundesland, ': ', datenZuZeigen,
-                                            ifelse(input$auswahl == "Impfquote", "%", "")))) +
+                               text = tooltip_text)) +
       geom_bar(stat = "identity", fill = "steelblue") +
       coord_flip() + # Um die Balken horizontal anzuzeigen
       labs(x = "", y = input$auswahl) +
