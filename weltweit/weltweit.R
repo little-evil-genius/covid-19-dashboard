@@ -8,7 +8,7 @@ data <- read.csv(file="C:/Users/gimmi/OneDrive/Universität/5. Semester_WS23/Dat
                  sep =",", dec = ",", header = TRUE)
 
 data_cases <- data %>%
-  select(-Country_code, -WHO_region, -New_cases, -New_deaths, 
+  select(-Country_code, -New_cases, -New_deaths, 
          -Cumulative_deaths) %>%
   mutate(Date_reported = as.Date(Date_reported),
          Year = lubridate::year(Date_reported)) %>%
@@ -30,9 +30,14 @@ ui <- fluidPage(
       selectInput("selected_year", "Jahr (2020-2023):", choices = unique(data_cases$Year))
     ),
     mainPanel(
-      tabsetPanel(
-        tabPanel("Kumulierte Fallzahlen nach Land", plotlyOutput("world_map_cases")),
-        tabPanel("Kumulierte Todesfälle nach Land", plotlyOutput("world_map_deaths"))
+      fluidRow(
+        column(width = 12,
+               tabsetPanel(
+                 tabPanel("Kumulierte Fallzahlen nach Land", plotlyOutput("world_map_cases")),
+                 tabPanel("Kumulierte Todesfälle nach Land", plotlyOutput("world_map_deaths")),
+                 tabPanel("Prozentuale Verteilung nach Kontinent", plotlyOutput("continent_pie_chart"))
+               )
+        )
       )
     )
   )
@@ -61,16 +66,17 @@ server <- function(input, output) {
       colorscale = "Plasma",
       text = ~paste(Country, "<br>Total Cases: ", scales::comma(Total_Cumulative_Cases)),
       hoverinfo = "text"
-    )
-    
-    fig <- fig %>% layout(
-      #title = paste("Kumulierte Fälle nach Land im Jahr", input$selected_year),
-      geo = list(
-        showframe = FALSE,
-        showcoastlines = TRUE,
-        projection = list(type = 'mercator')
+    ) %>%
+      layout(
+        geo = list(
+          showframe = FALSE,
+          showcoastlines = TRUE,
+          projection = list(type = 'mercator')
+        ),
+        width = 1000,
+        height = 500,
+        margin = list(l = 50)  
       )
-    )
     
     return(fig)
   })
@@ -86,20 +92,43 @@ server <- function(input, output) {
       colorscale = "Plasma",
       text = ~paste(Country, "<br>Total Cases: ", scales::comma(Total_Cumulative_deaths)),
       hoverinfo = "text"
-    )
-    
-    fig <- fig %>% layout(
-      #title = paste("Kumulierte Todesfälle nach Land im Jahr", input$selected_year),
-      geo = list(
-        showframe = FALSE,
-        showcoastlines = TRUE,
-        projection = list(type = 'mercator')
+    ) %>%
+      layout(
+        geo = list(
+          showframe = FALSE,
+          showcoastlines = TRUE,
+          projection = list(type = 'mercator')
+        ),
+        width = 1000,
+        height = 500,
+        margin = list(l = 50)
       )
-    )
+    
+    return(fig)
+  })
+  
+  output$continent_pie_chart <- renderPlotly({
+    continent_data <- data %>%
+      filter(Year == input$selected_year) %>%
+      group_by(Continent = WHO_region) %>%
+      summarise(Total_Cumulative_Cases = sum(Cumulative_cases))
+    
+    fig <- plot_ly(
+      data = continent_data,
+      labels = ~Continent,
+      values = ~Total_Cumulative_Cases,
+      type = 'pie',
+      textinfo = 'percent+label',
+      insidetextorientation = 'radial',
+      hoverinfo = 'label+percent'
+    ) %>%
+      layout(
+        title = "Prozentuale Verteilung der Fallzahlen nach Kontinent",
+        showlegend = TRUE
+      )
     
     return(fig)
   })
 }
 
 shinyApp(ui = ui, server = server)
-
