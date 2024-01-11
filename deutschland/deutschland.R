@@ -10,7 +10,7 @@ library(scales)
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
 impfungen <- read_csv('impfen-bundeslaender.csv')
-infektionsdaten <- read.csv("gesamt-zahlen-bundeslaender.csv", stringsAsFactors = FALSE)
+infektionsdaten <- read_csv("gesamt-zahlen-bundeslaender.csv")
 
 # Laden der Geodaten für Deutschland
 deutschland_geodaten <- st_read("germany_map.geojson")
