@@ -2,6 +2,7 @@ library(shiny)
 library(shinydashboard)
 library(ggplot2)
 library(readr)
+library(sf)
 library(dplyr)
 library(plotly)
 library(scales)
@@ -9,6 +10,10 @@ library(scales)
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
 impfungen <- read_csv('impfen-bundeslaender.csv')
+infektionsdaten <- read_csv('gesamt-zahlen-bundeslaender.csv')
+
+# Laden der Geodaten für Deutschland
+deutschland_geodaten <- st_read("germany_map.geojson")
 
 # Konvertiere das Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
 daten$Berichtsdatum <- as.Date(paste0(daten$Berichtsdatum, "-01"))
@@ -35,6 +40,24 @@ format_number_for_tooltip <- function(number) {
   }
 }
 
+# Benutzerdefinierte Funktion zur Formatierung der Zahlen für den Tooltip 
+format_number_for_tooltip_map <- function(numbers) {
+  formatted_numbers <- ifelse(numbers >= 1e6, paste0(format(round(numbers / 1e6, 1), nsmall = 1), " Mio."),
+                              ifelse(numbers >= 1e3, paste0(format(round(numbers / 1e3), nsmall = 0), " Tsd."), as.character(numbers)))
+  return(formatted_numbers)
+}
+
+# Merge der Infektionsdaten mit den Geodaten
+daten_merged <- deutschland_geodaten %>%
+  left_join(infektionsdaten, by = c("gen" = "Bundesland"))
+
+ui <- fluidPage(
+  titlePanel("COVID-19 Infektionen pro Bundesland"),
+  mainPanel(
+    plotOutput("mapOutput")
+  )
+)
+
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Deutschland", tabName = "deutschland"),
@@ -49,7 +72,11 @@ body <- dashboardBody(
     tabItem(tabName = "deutschland",
             h2("Informationen zur COVID-19-Impfung in Deutschland"),
             fluidRow(
-              column(12,
+              column(6,
+                     selectInput("dropdown_select", "Wähle Daten aus:", choices = c("Infektionen", "Todesfälle")),
+                     plotlyOutput("mapOutput")
+              ),
+              column(6,
                      selectInput("auswahl", "Wähle Daten aus:", choices = c("Impfquote", "Impfungen")),
                      plotlyOutput("impfChart")
               )
@@ -86,6 +113,34 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+  
+  # Erstelle der interaktiven Karte für Todes- und Fälle
+  output$mapOutput <- renderPlotly({
+    # Überprüfen, welcher Wert im Dropdown-Menü ausgewählt ist
+    selected_data <- switch(input$dropdown_select,
+                            "Infektionen" = daten_merged$Infektionen,
+                            "Todesfälle" = daten_merged$Todesfälle)
+    
+    daten_merged$tooltip_text <- paste("Bundesland:", daten_merged$gen, "<br>", input$dropdown_select, ":", format_number_for_tooltip_map(selected_data))
+    
+    p <- ggplot(data = daten_merged) +
+      geom_sf(aes(fill = selected_data, text = tooltip_text), color = "white") +
+      scale_fill_gradient(low = "green", high = "red", na.value = NA, name = input$dropdown_select,
+                          labels = scales::comma) +  # Legendenname dynamisch gesetzt und Skala als Kommaformat festgelegt
+      labs(fill = NULL) +  # Legendenbeschriftung entfernt
+      theme_minimal() +
+      theme(panel.grid = element_blank(),  # Entfernt das Gitternetz
+            axis.text.x = element_blank(),  # Blendet die Beschriftungen der x-Achse aus
+            axis.text.y = element_blank())  # Blendet die Beschriftungen der y-Achse aus
+    
+    # Konvertiere ggplot-Objekt zu Plotly und passe die Interaktivität an
+    plotly_obj <- ggplotly(p, tooltip = c("text", "fill")) %>% 
+      layout(legend = list(title = "", tickformat = "$,.0f"), 
+             showlegend = TRUE) %>%  # Zeigt die Legende an
+      config(displayModeBar = FALSE)  # Ausblenden der Modeleiste
+    
+    plotly_obj
+  })
   
   # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
   gefilterteDaten <- reactive({
