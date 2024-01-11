@@ -7,8 +7,7 @@ library(plotly)
 
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
-impfungen <- read_csv('impfungen-bundeslaender.csv')
-bevoelkerung <- read_csv('bevoelkerung.csv')
+impfungen <- read_csv('export-collection-all-properties-impfqoute-bundeslaender-2024-01-11.csv')
 
 # Konvertiere das Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
 daten$Berichtsdatum <- as.Date(paste0(daten$Berichtsdatum, "-01"))
@@ -20,12 +19,9 @@ monatsnamen <- c("Januar", "Februar", "März", "April", "Mai", "Juni",
                  "Juli", "August", "September", "Oktober", "November", "Dezember")
 daten$MonatName <- factor(monatsnamen[as.integer(daten$Monat)], levels = monatsnamen)
 
-# Verbinde die Impfungsdaten mit den Bevölkerungsdaten
-impfungen_bev <- left_join(impfungen, bevoelkerung, by = "Bundesland")
-
-# Berechne die Impfrate pro 100 Einwohner
-impfungen_bev <- impfungen_bev %>%
-  mutate(Impfrate = (Impfungen / Bevoelkerung) * 100)
+# Stelle sicher, dass 'Impfquote' und 'Impfungen' als numerisch eingelesen werden
+impfungen$Impfquote <- as.numeric(as.character(impfungen$Impfquote))
+impfungen$Impfungen <- as.numeric(as.character(impfungen$Impfung))
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
@@ -39,10 +35,11 @@ body <- dashboardBody(
   tabItems(
     # Deutschland Tab-Inhalt
     tabItem(tabName = "deutschland",
-            h2("Informationen zur globalen COVID-19-Pandemie innerhalb Deutschlands nach Daten der WHO, inklusive Fallzahlen, Todesfälle und Impfungen."),
+            h2("Informationen zur COVID-19-Impfung in Deutschland"),
             fluidRow(
               column(12,
-                     plotlyOutput("impfungenPlot")
+                     selectInput("auswahl", "Wähle Daten aus:", choices = c("Impfquote", "Impfungen")),
+                     plotlyOutput("impfChart")
               )
             ),
             fluidRow(
@@ -109,16 +106,22 @@ server <- function(input, output) {
     ggplotly(p, tooltip = c("x")) %>% config(displayModeBar=FALSE)
   })
   
-  # Erstelle das Balkendiagramm für Impfrate pro Bundesland
-  output$impfungenPlot <- renderPlotly({
-    p <- ggplot(data=impfungen_bev, aes(x=reorder(Bundesland,-Impfrate), y=Impfrate)) +
-      geom_bar(stat="identity") + 
-      coord_flip() + 
-      labs(x="", y="Impfrate pro 100 Einwohner") + 
-      theme_minimal() + 
-      ggtitle("Impfrate nach Bundesland")
+  # Erstelle das Balkendiagramm für Impfdaten
+  output$impfChart <- renderPlotly({
+    # Entscheide basierend auf dem Dropdown-Menü, welche Daten angezeigt werden sollen
+    datenZuZeigen <- switch(input$auswahl,
+                            "Impfquote" = impfungen$Impfquote,
+                            "Impfungen" = impfungen$Impfungen)
     
-    ggplotly(p) %>% config(displayModeBar=FALSE)
+    # Erstelle das Balkendiagramm
+    p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen)) +
+      geom_bar(stat = "identity", fill = "steelblue") +
+      coord_flip() + # Um die Balken horizontal anzuzeigen
+      labs(x = "", y = input$auswahl) +
+      theme_minimal() +
+      theme(panel.background = element_rect(fill = "transparent", colour = NA))
+    
+    ggplotly(p) %>% config(displayModeBar = FALSE)
   })
 }
 
