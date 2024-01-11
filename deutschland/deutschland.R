@@ -72,7 +72,10 @@ body <- dashboardBody(
     tabItem(tabName = "deutschland",
             h2("Informationen zur COVID-19-Impfung in Deutschland"),
             fluidRow(
-              column(6,
+              column(3,
+                     
+              ),
+              column(3,
                      selectInput("dropdown_select", "Wähle Daten aus:", choices = c("Infektionen", "Todesfälle")),
                      plotlyOutput("mapOutput")
               ),
