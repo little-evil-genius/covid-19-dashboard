@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(ggplot2)
 library(readr)
 library(dplyr)
@@ -26,33 +27,55 @@ impfungen_bev <- left_join(impfungen, bevoelkerung, by = "Bundesland")
 impfungen_bev <- impfungen_bev %>%
   mutate(Impfrate = (Impfungen / Bevoelkerung) * 100)
 
-# UI
-ui <- fluidPage(
-  titlePanel("COVID-19 Statistiken"),
-  
-  fluidRow(
-    column(12,
-           plotlyOutput("impfungenPlot")
-    ),
-  
-  fluidRow(
-    column(12,
-           selectInput("jahrInput", "Jahr wählen:", choices = unique(daten$Jahr))
-    )
-  ),
-  
-  fluidRow(
-    column(6,
-           plotlyOutput("faellePlot")
-    ),
-    column(6,
-           plotlyOutput("todesfaellePlot")
-    )
-  )
+sidebar <- dashboardSidebar(
+  sidebarMenu(
+    menuItem("Deutschland", tabName = "deutschland"),
+    menuItem("Europa", tabName = "europa"),
+    menuItem("Welt", tabName = "welt")
   )
 )
 
-# Server
+body <- dashboardBody(
+  tabItems(
+    # Deutschland Tab-Inhalt
+    tabItem(tabName = "deutschland",
+            h2("Informationen zur globalen COVID-19-Pandemie innerhalb Deutschlands nach Daten der WHO, inklusive Fallzahlen, Todesfälle und Impfungen."),
+            fluidRow(
+              column(12,
+                     plotlyOutput("impfungenPlot")
+              )
+            ),
+            fluidRow(
+              column(12,
+                     selectInput("jahrInput", "Jahr wählen:", choices = unique(daten$Jahr))
+              )
+            ),
+            fluidRow(
+              column(6,
+                     plotlyOutput("faellePlot")
+              ),
+              column(6,
+                     plotlyOutput("todesfaellePlot")
+              )
+            )
+    ),
+    # Europa Tab-Inhalt
+    tabItem(tabName = "europa",
+            h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO.")
+    ),
+    # Welt Tab-Inhalt
+    tabItem(tabName = "welt",
+            h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle sowie Impfungen nach den Berichten der WHO.")
+    )
+  )
+)
+
+ui <- dashboardPage(
+  dashboardHeader(title = 'Globale COVID-19-Pandemie Datenzusammentragung'),
+  sidebar,
+  body
+)
+
 server <- function(input, output) {
   
   # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
@@ -83,13 +106,13 @@ server <- function(input, output) {
       ggtitle(paste("COVID-19 Todesfälle im Jahr", input$jahrInput)) +
       coord_flip()
     
-    ggplotly(p, tooltip = c("x")) %>% config(displayModeBar = FALSE)
+    ggplotly(p, tooltip = c("x")) %>% config(displayModeBar=FALSE)
   })
   
   # Erstelle das Balkendiagramm für Impfrate pro Bundesland
   output$impfungenPlot <- renderPlotly({
-    p <- ggplot(data = impfungen_bev, aes(x=reorder(Bundesland, -Impfrate), y=Impfrate)) +
-      geom_bar(stat="identity") +
+    p <- ggplot(data=impfungen_bev, aes(x=reorder(Bundesland,-Impfrate), y=Impfrate)) +
+      geom_bar(stat="identity") + 
       coord_flip() + 
       labs(x="", y="Impfrate pro 100 Einwohner") + 
       theme_minimal() + 
@@ -99,5 +122,4 @@ server <- function(input, output) {
   })
 }
 
-# Run the application 
 shinyApp(ui=ui, server=server)
