@@ -4,6 +4,7 @@ library(ggplot2)
 library(readr)
 library(dplyr)
 library(plotly)
+library(scales)
 
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
@@ -22,6 +23,17 @@ daten$MonatName <- factor(monatsnamen[as.integer(daten$Monat)], levels = monatsn
 # Stelle sicher, dass 'Impfquote' und 'Impfungen' als numerisch eingelesen werden
 impfungen$Impfquote <- as.numeric(as.character(impfungen$Impfquote))
 impfungen$Impfungen <- as.numeric(as.character(impfungen$Impfung))
+
+# Benutzerdefinierte Funktion zur Formatierung der Zahlen für den Tooltip
+format_number_for_tooltip <- function(number) {
+  if (number >= 1e6) {
+    return(paste0(format(round(number / 1e6, 1), nsmall = 1), " Mio."))
+  } else if (number >= 1e3) {
+    return(paste0(format(round(number / 1e3), nsmall = 0), " Tsd."))
+  } else {
+    return(as.character(number))
+  }
+}
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
@@ -109,19 +121,32 @@ server <- function(input, output) {
   # Erstelle das Balkendiagramm für Impfdaten
   output$impfChart <- renderPlotly({
     # Entscheide basierend auf dem Dropdown-Menü, welche Daten angezeigt werden sollen
-    datenZuZeigen <- switch(input$auswahl,
-                            "Impfquote" = impfungen$Impfquote,
-                            "Impfungen" = impfungen$Impfungen)
+    datenZuZeigen <- if (input$auswahl == "Impfquote") {
+      impfungen$Impfquote
+    } else {
+      impfungen$Impfungen
+    }
     
-    # Erstelle das Balkendiagramm
-    p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen)) +
+    # Erstelle das Balkendiagramm mit angepasstem Tooltip-Text
+    p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen,
+                               text = paste(Bundesland, ': ', datenZuZeigen,
+                                            ifelse(input$auswahl == "Impfquote", "%", "")))) +
       geom_bar(stat = "identity", fill = "steelblue") +
       coord_flip() + # Um die Balken horizontal anzuzeigen
       labs(x = "", y = input$auswahl) +
       theme_minimal() +
       theme(panel.background = element_rect(fill = "transparent", colour = NA))
     
-    ggplotly(p) %>% config(displayModeBar = FALSE)
+    # Anpassung der Achsenbeschriftung und Erweiterung der y-Achse bei Bedarf
+    if (input$auswahl == "Impfungen") {
+      p <- p + expand_limits(y = c(500000, NA)) +
+        scale_y_continuous(labels = scales::comma) # Verwende Kommas als Tausendertrennzeichen
+    } else {
+      p <- p + scale_y_continuous(labels = scales::label_number(suffix = "%", accuracy = 1)) # Zeige Prozentwerte für Impfquote ohne Umrechnung in Dezimalzahl
+    }
+    
+    # Konvertiere ggplot-Objekt zu Plotly und stelle sicher, dass das angepasste Tooltip verwendet wird
+    ggplotly(p, tooltip = "text") %>% config(displayModeBar = FALSE)
   })
 }
 
