@@ -2,6 +2,7 @@ library(shiny)
 library(shinydashboard)
 library(ggplot2)
 library(readr)
+library(sf)
 library(dplyr)
 library(plotly)
 library(scales)
@@ -9,6 +10,10 @@ library(scales)
 # Lese die CSV-Dateien ein
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
 impfungen <- read_csv('impfen-bundeslaender.csv')
+infektionsdaten <- read.csv("gesamt-zahlen-bundeslaender.csv", stringsAsFactors = FALSE)
+
+# Laden der Geodaten für Deutschland
+deutschland_geodaten <- st_read("germany_map.geojson")
 
 # Konvertiere das Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
 daten$Berichtsdatum <- as.Date(paste0(daten$Berichtsdatum, "-01"))
@@ -35,6 +40,10 @@ format_number_for_tooltip <- function(number) {
   }
 }
 
+# Merge der Infektionsdaten mit den Geodaten
+daten_merged <- deutschland_geodaten %>%
+  left_join(infektionsdaten, by = c("NAME_1" = "Bundesland"))
+
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Deutschland", tabName = "deutschland"),
@@ -49,7 +58,10 @@ body <- dashboardBody(
     tabItem(tabName = "deutschland",
             h2("Informationen zur COVID-19-Impfung in Deutschland"),
             fluidRow(
-              column(12,
+              column(6,
+                     plotlyOutput("germany_map")
+              ),
+              column(6,
                      selectInput("auswahl", "Wähle Daten aus:", choices = c("Impfquote", "Impfungen")),
                      plotlyOutput("impfChart")
               )
@@ -87,38 +99,13 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   
-  # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
-  gefilterteDaten <- reactive({
-    daten %>%
-      filter(Jahr == input$jahrInput) %>%
-      mutate(Faelle_tooltip = sapply(Faelle_gesamt, format_number_for_tooltip),
-             Todesfaelle_tooltip = sapply(Todesfaelle_gesamt, format_number_for_tooltip))
-  })
   
-  # Erstelle das interaktive Säulendiagramm für Fälle
-  output$faellePlot <- renderPlotly({
-    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt, text = Faelle_tooltip)) +
-      geom_bar(stat = "identity", fill = "blue") +
-      theme(axis.text.y = element_text(angle = 0)) +
-      labs(y = "", x = "Anzahl der Fälle") +
-      scale_x_continuous(labels = scales::comma) +
-      ggtitle(paste("COVID-19 Fälle im Jahr", input$jahrInput)) +
-      coord_flip()
-    
-    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar = FALSE)
-  })
-  
-  # Erstelle das interaktive Säulendiagramm für Todesfälle
-  output$todesfaellePlot <- renderPlotly({
-    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt, text = Todesfaelle_tooltip)) +
-      geom_bar(stat = "identity", fill = "red") +
-      theme(axis.text.y = element_text(angle = 0)) +
-      labs(y = "", x = "Anzahl der Todesfälle") +
-      scale_x_continuous(labels = scales::comma) +
-      ggtitle(paste("COVID-19 Todesfälle im Jahr", input$jahrInput)) +
-      coord_flip()
-    
-    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar=FALSE)
+  output$mapOutput <- renderPlot({
+    ggplot(data = daten_merged) +
+      geom_sf(aes(fill = Impfektionen), color = "white") +
+      scale_fill_gradient(low = "green", high = "red", na.value = NA) +
+      labs(fill = "Infektionen") +
+      theme_minimal()
   })
   
   # Erstelle das Balkendiagramm für Impfdaten
@@ -156,6 +143,40 @@ server <- function(input, output) {
     
     # Konvertiere ggplot-Objekt zu Plotly und stelle sicher, dass das angepasste Tooltip verwendet wird
     ggplotly(p, tooltip = "text") %>% config(displayModeBar = FALSE)
+  })
+  
+  # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
+  gefilterteDaten <- reactive({
+    daten %>%
+      filter(Jahr == input$jahrInput) %>%
+      mutate(Faelle_tooltip = sapply(Faelle_gesamt, format_number_for_tooltip),
+             Todesfaelle_tooltip = sapply(Todesfaelle_gesamt, format_number_for_tooltip))
+  })
+  
+  # Erstelle das interaktive Säulendiagramm für Fälle
+  output$faellePlot <- renderPlotly({
+    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt, text = Faelle_tooltip)) +
+      geom_bar(stat = "identity", fill = "blue") +
+      theme(axis.text.y = element_text(angle = 0)) +
+      labs(y = "", x = "Anzahl der Fälle") +
+      scale_x_continuous(labels = scales::comma) +
+      ggtitle(paste("COVID-19 Fälle im Jahr", input$jahrInput)) +
+      coord_flip()
+    
+    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar = FALSE)
+  })
+  
+  # Erstelle das interaktive Säulendiagramm für Todesfälle
+  output$todesfaellePlot <- renderPlotly({
+    p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt, text = Todesfaelle_tooltip)) +
+      geom_bar(stat = "identity", fill = "red") +
+      theme(axis.text.y = element_text(angle = 0)) +
+      labs(y = "", x = "Anzahl der Todesfälle") +
+      scale_x_continuous(labels = scales::comma) +
+      ggtitle(paste("COVID-19 Todesfälle im Jahr", input$jahrInput)) +
+      coord_flip()
+    
+    ggplotly(p, tooltip = c("text")) %>% config(displayModeBar=FALSE)
   })
 }
 
