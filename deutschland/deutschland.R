@@ -51,14 +51,6 @@ daten_merged <- deutschland_geodaten %>%
   left_join(infektionsdaten, by = c("gen" = "Bundesland"))
 
 
-
-ui <- fluidPage(
-  titlePanel("COVID-19 Infektionen pro Bundesland"),
-  mainPanel(
-    plotOutput("mapOutput")
-  )
-)
-
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Deutschland", tabName = "deutschland"),
@@ -73,10 +65,7 @@ body <- dashboardBody(
     tabItem(tabName = "deutschland",
             h2("Informationen zur COVID-19-Impfung in Deutschland"),
             fluidRow(
-              column(3,
-                     
-              ),
-              column(3,
+              column(6,
                      selectInput("dropdown_select", "Wähle Daten aus:", choices = c("Infektionen", "Todesfälle")),
                      plotlyOutput("mapOutput")
               ),
@@ -130,12 +119,14 @@ server <- function(input, output) {
     p <- ggplot(data = daten_merged) +
       geom_sf(aes(fill = selected_data, text = tooltip_text), color = "white") +
       scale_fill_gradient(low = "green", high = "red", na.value = NA, name = input$dropdown_select,
-                          labels = scales::comma) +  
+                          labels = scales::label_number(big.mark = ".")) +  
       labs(fill = NULL) +  
       theme_minimal() +
       theme(panel.grid = element_blank(),  
             axis.text.x = element_blank(),  
-            axis.text.y = element_blank())  
+            axis.text.y = element_blank(),
+            panel.background = element_rect(fill = "transparent", colour = NA),
+            plot.background = element_rect(fill = "transparent", colour = NA))
     
     # ggplot-Objekt zu Plotly 
     plotly_obj <- ggplotly(p, tooltip = c("text", "fill")) %>% 
@@ -160,9 +151,12 @@ server <- function(input, output) {
       geom_bar(stat = "identity", fill = "blue") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Fälle") +
-      scale_x_continuous(labels = scales::comma) +
+      scale_x_continuous(labels = scales::label_number(big.mark = ".")) +
       ggtitle(paste("COVID-19 Fälle im Jahr", input$jahrInput)) +
-      coord_flip()
+      coord_flip() +
+      theme_minimal() + 
+      theme(panel.background = element_rect(fill = "transparent", colour = NA),
+            plot.background = element_rect(fill = "transparent", colour = NA))
     
     ggplotly(p, tooltip = c("text")) %>% config(displayModeBar = FALSE)
   })
@@ -173,9 +167,12 @@ server <- function(input, output) {
       geom_bar(stat = "identity", fill = "red") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Todesfälle") +
-      scale_x_continuous(labels = scales::comma) +
+      scale_x_continuous(labels = scales::label_number(big.mark = ".")) +
       ggtitle(paste("COVID-19 Todesfälle im Jahr", input$jahrInput)) +
-      coord_flip()
+      coord_flip() +
+      theme_minimal() + 
+      theme(panel.background = element_rect(fill = "transparent", colour = NA),
+            plot.background = element_rect(fill = "transparent", colour = NA))
     
     ggplotly(p, tooltip = c("text")) %>% config(displayModeBar=FALSE)
   })
@@ -203,12 +200,13 @@ server <- function(input, output) {
       coord_flip() + # Um die Balken horizontal anzuzeigen
       labs(x = "", y = input$auswahl) +
       theme_minimal() +
-      theme(panel.background = element_rect(fill = "transparent", colour = NA))
+      theme(panel.background = element_rect(fill = "transparent", colour = NA),
+            plot.background = element_rect(fill = "transparent", colour = NA))
     
     # Anpassung der Achsenbeschriftung
     if (input$auswahl == "Impfungen") {
       p <- p + expand_limits(y = c(500000, NA)) +
-        scale_y_continuous(labels = scales::comma)
+        scale_y_continuous(labels = scales::label_number(big.mark = "."))
     } else {
       p <- p + scale_y_continuous(labels = scales::label_number(suffix = "%", accuracy = 1))
     }
