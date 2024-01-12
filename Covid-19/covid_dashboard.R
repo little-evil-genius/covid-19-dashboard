@@ -153,6 +153,7 @@ body <- dashboardBody(
     }
   "))
   ),
+  
   tabItems(
     # Willkommen Tab-Inhalt
     tabItem(tabName = "willkommen",
@@ -190,16 +191,19 @@ body <- dashboardBody(
             fluidRow(
               column(6,
                      selectInput("dropdown_select", "Wähle Daten aus:", choices = c("Infektionen", "Todesfälle")),
+                     'Wähle den gewünschten Input und erkunde eine Deutschlandkarte von den gesamt Zahlen der COVID-19 (Todes)Fällen für jedes Bundesland. Fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
                      plotlyOutput("mapOutput")
               ),
               column(6,
                      selectInput("auswahl", "Wähle Daten aus:", choices = c("Impfquote", "Impfungen")),
+                     'Wähle entweder die Impfqoute oder Impfungen (komplette Zahlen) und lass dir ein Balkendiagramm für die COVID-19 Impfungen pro Bundesland anzeigen. Fahre mit der Maus über die Balken, um detaillierte Informationen anzuzeigen.',
                      plotlyOutput("impfChart")
               )
             ),
             fluidRow(
               column(12,
-                     selectInput("jahrInput", "Jahr wählen:", choices = unique(daten$Jahr))
+                     selectInput("jahrInput", "Jahr wählen:", choices = unique(daten$Jahr)),
+                     'Wähle ein Jahr (2020, 2021, 2022 oder 2023) und lass dir jeweils ein Säulendiagramm für die COVID-19 (Todes)Fälle in Deutschland ausgeben. Fahre mit der Maus über die Säulen, um detaillierte Informationen anzuzeigen.'
               )
             ),
             fluidRow(
@@ -216,7 +220,7 @@ body <- dashboardBody(
             h2("Informationen über die europaweiten COVID-19-Pandemie nach den Berichten der WHO."),
             fluidRow(
               column(12,
-                     'Wähle ein Jahr (2020, 2021, 2022 oder Gesamt) und erkunde eine Weltkarte mit kumulierten COVID-19-Fällen für jedes Land. fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
+                     'Wähle ein Jahr (2020, 2021, 2022 oder Gesamt) und erkunde eine Europakarte mit kumulierten COVID-19-Fällen für jedes Land. Fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
                      selectInput('Jahr', '', choices = c('2020' = '2020', '2021' = '2021', '2022' = '2022', 'Gesamt' = 'Gesamt')),
                      plotlyOutput("Eu_map_plot"),
                      h3('Statistikdaten:'),
@@ -235,6 +239,7 @@ body <- dashboardBody(
             h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle nach den Berichten der WHO."),
             fluidRow(
               column(6,
+                     'Wähle ein Jahr (2020, 2021, 2022 oder Gesamt) und erkunde eine Weltkarte mit kumulierten COVID-19-Fällen für jedes Land. Fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
                      selectInput("selected_year", "Jahr (2020-2023):", choices = unique(data_cases$Year))
               )
             ),
