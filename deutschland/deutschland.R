@@ -7,29 +7,29 @@ library(dplyr)
 library(plotly)
 library(scales)
 
-# Lese die CSV-Dateien ein
+# die CSV-Dateien einlesen
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
 impfungen <- read_csv('impfen-bundeslaender.csv')
 infektionsdaten <- read_csv('gesamt-zahlen-bundeslaender.csv')
 
-# Laden der Geodaten für Deutschland
+# Geodaten für Deutschland laden
 deutschland_geodaten <- st_read("germany_map.geojson")
 
-# Konvertiere das Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
+# Berichtsdatum in ein Datum und extrahiere Jahr und Monat als separate Spalten
 daten$Berichtsdatum <- as.Date(paste0(daten$Berichtsdatum, "-01"))
 daten$Jahr <- format(daten$Berichtsdatum, "%Y")
 daten$Monat <- format(daten$Berichtsdatum, "%m")
 
-# Ordne die Monate richtig an
-monatsnamen <- c("Januar", "Februar", "März", "April", "Mai", "Juni",
-                 "Juli", "August", "September", "Oktober", "November", "Dezember")
+# Monate richtig an ordnen
+monatsnamen <- c("Jan.", "Feb.", "März", "Apr.", "Mai", "Jun.",
+                 "Jul.", "Aug.", "Sept.", "Okt.", "Nov.", "Dez.")
 daten$MonatName <- factor(monatsnamen[as.integer(daten$Monat)], levels = monatsnamen)
 
-# Stelle sicher, dass 'Impfquote' und 'Impfungen' als numerisch eingelesen werden
+# 'Impfquote' und 'Impfungen' müssen numerisch sein
 impfungen$Impfquote <- as.numeric(as.character(impfungen$Impfquote))
 impfungen$Impfungen <- as.numeric(as.character(impfungen$Impfungen))
 
-# Benutzerdefinierte Funktion zur Formatierung der Zahlen für den Tooltip
+# Formatierung der Zahlen für den Tooltip
 format_number_for_tooltip <- function(number) {
   if (number >= 1e6) {
     return(paste0(format(round(number / 1e6, 1), nsmall = 1), " Mio."))
@@ -39,8 +39,7 @@ format_number_for_tooltip <- function(number) {
     return(as.character(number))
   }
 }
-
-# Benutzerdefinierte Funktion zur Formatierung der Zahlen für den Tooltip 
+# Formatierung der Zahlen für den Tooltip (Karte)
 format_number_for_tooltip_map <- function(numbers) {
   formatted_numbers <- ifelse(numbers >= 1e6, paste0(format(round(numbers / 1e6, 1), nsmall = 1), " Mio."),
                               ifelse(numbers >= 1e3, paste0(format(round(numbers / 1e3), nsmall = 0), " Tsd."), as.character(numbers)))
@@ -50,6 +49,8 @@ format_number_for_tooltip_map <- function(numbers) {
 # Merge der Infektionsdaten mit den Geodaten
 daten_merged <- deutschland_geodaten %>%
   left_join(infektionsdaten, by = c("gen" = "Bundesland"))
+
+
 
 ui <- fluidPage(
   titlePanel("COVID-19 Infektionen pro Bundesland"),
@@ -119,7 +120,7 @@ server <- function(input, output) {
   
   # Erstelle der interaktiven Karte für Todes- und Fälle
   output$mapOutput <- renderPlotly({
-    # Überprüfen, welcher Wert im Dropdown-Menü ausgewählt ist
+    
     selected_data <- switch(input$dropdown_select,
                             "Infektionen" = daten_merged$Infektionen,
                             "Todesfälle" = daten_merged$Todesfälle)
@@ -129,23 +130,23 @@ server <- function(input, output) {
     p <- ggplot(data = daten_merged) +
       geom_sf(aes(fill = selected_data, text = tooltip_text), color = "white") +
       scale_fill_gradient(low = "green", high = "red", na.value = NA, name = input$dropdown_select,
-                          labels = scales::comma) +  # Legendenname dynamisch gesetzt und Skala als Kommaformat festgelegt
-      labs(fill = NULL) +  # Legendenbeschriftung entfernt
+                          labels = scales::comma) +  
+      labs(fill = NULL) +  
       theme_minimal() +
-      theme(panel.grid = element_blank(),  # Entfernt das Gitternetz
-            axis.text.x = element_blank(),  # Blendet die Beschriftungen der x-Achse aus
-            axis.text.y = element_blank())  # Blendet die Beschriftungen der y-Achse aus
+      theme(panel.grid = element_blank(),  
+            axis.text.x = element_blank(),  
+            axis.text.y = element_blank())  
     
-    # Konvertiere ggplot-Objekt zu Plotly und passe die Interaktivität an
+    # ggplot-Objekt zu Plotly 
     plotly_obj <- ggplotly(p, tooltip = c("text", "fill")) %>% 
       layout(legend = list(title = "", tickformat = "$,.0f"), 
-             showlegend = TRUE) %>%  # Zeigt die Legende an
-      config(displayModeBar = FALSE)  # Ausblenden der Modeleiste
+             showlegend = TRUE) %>%  
+      config(displayModeBar = FALSE)
     
     plotly_obj
   })
   
-  # Reaktiver Ausdruck für gefilterte Daten basierend auf dem gewählten Jahr
+  # gefilterte Daten für das gewählte Jahr
   gefilterteDaten <- reactive({
     daten %>%
       filter(Jahr == input$jahrInput) %>%
@@ -181,21 +182,21 @@ server <- function(input, output) {
   
   # Erstelle das Balkendiagramm für Impfdaten
   output$impfChart <- renderPlotly({
-    # Entscheide basierend auf dem Dropdown-Menü, welche Daten angezeigt werden sollen
+    
     datenZuZeigen <- if (input$auswahl == "Impfquote") {
       impfungen$Impfquote
     } else {
       impfungen$Impfungen
     }
     
-    # Erstelle eine neue Spalte im DataFrame für den Tooltip-Text
+    # neue Spalte im DataFrame für den Tooltip-Text
     impfungen$tooltip_text <- if (input$auswahl == "Impfquote") {
       paste(impfungen$Bundesland, ': ', impfungen$Impfquote, '%', sep = '')
     } else {
       paste(impfungen$Bundesland, ': ', sapply(impfungen$Impfungen, format_number_for_tooltip), sep = '')
     }
     
-    # Erstelle das Balkendiagramm mit angepasstem Tooltip-Text
+    # Erstelle das Balkendiagramm mit Tooltip-Text
     p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen,
                                text = tooltip_text)) +
       geom_bar(stat = "identity", fill = "steelblue") +
@@ -204,15 +205,15 @@ server <- function(input, output) {
       theme_minimal() +
       theme(panel.background = element_rect(fill = "transparent", colour = NA))
     
-    # Anpassung der Achsenbeschriftung und Erweiterung der y-Achse bei Bedarf
+    # Anpassung der Achsenbeschriftung
     if (input$auswahl == "Impfungen") {
       p <- p + expand_limits(y = c(500000, NA)) +
-        scale_y_continuous(labels = scales::comma) # Verwende Kommas als Tausendertrennzeichen
+        scale_y_continuous(labels = scales::comma)
     } else {
-      p <- p + scale_y_continuous(labels = scales::label_number(suffix = "%", accuracy = 1)) # Zeige Prozentwerte für Impfquote ohne Umrechnung in Dezimalzahl
+      p <- p + scale_y_continuous(labels = scales::label_number(suffix = "%", accuracy = 1))
     }
     
-    # Konvertiere ggplot-Objekt zu Plotly und stelle sicher, dass das angepasste Tooltip verwendet wird
+    # ggplot-Objekt zu Plotly 
     ggplotly(p, tooltip = "text") %>% config(displayModeBar = FALSE)
   })
 }
