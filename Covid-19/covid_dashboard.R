@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(shinythemes)
 library(ggplot2)
 library(readr)
 library(sf)
@@ -133,6 +134,7 @@ pca <- prcomp(daten_fuer_pca, scale = TRUE)
 
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    menuItem("Willkommen", tabName = "willkommen"),
     menuItem("Deutschland", tabName = "deutschland"),
     menuItem("Europa", tabName = "europa"),
     menuItem("Welt", tabName = "welt")
@@ -140,7 +142,47 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
+  
+  tags$head(
+  tags$style(HTML("
+    .custom-welcome-text h1,
+    .custom-welcome-text h3,
+    .custom-welcome-text p {
+      font-weight: bold; 
+    }
+  "))
+),
   tabItems(
+    # Willkommen Tab-Inhalt
+    tabItem(tabName = "willkommen",
+            div(class = "custom-welcome-text",
+            h1("Willkommen beim COVID-19 Dashboard", align = "center"),
+            h2("Herzlich willkommen auf unserem COVID-19 Dashboard. Diese Plattform bietet einen umfassenden Überblick über die aktuellen COVID-19-Zahlen und warum es wichtig ist, sich mit diesen Daten auseinanderzusetzen. Hier ist eine kurze Einführung:"),
+            h3("Die Bedeutung der Daten"),
+            p("Dieses Dashboard ermöglicht es Ihnen, die aktuellen Fallzahlen, Impfstatistiken und andere relevante Informationen im Zusammenhang mit COVID-19 zu verfolgen. Die Daten werden sorgfältig aus verschiedenen vertrauenswürdigen Quellen gesammelt und bieten eine zuverlässige Grundlage für Entscheidungen und Handlungen."),
+            h3("Warum ist es wichtig?"),
+            tags$ul(
+              tags$li("Informierte Entscheidungen treffen: Durch das Verfolgen der aktuellen COVID-19-Zahlen können Sie informierte Entscheidungen für sich selbst, Ihre Familie und Ihre Gemeinschaft treffen. Dies ist besonders wichtig, da die Situation sich ständig ändert."),
+              tags$li("Prävention und Schutz: Das Dashboard bietet Einblicke in die Verbreitung des Virus in verschiedenen Regionen. Diese Informationen können dazu beitragen, präventive Maßnahmen zu verstehen und zu ergreifen, um sich selbst und andere zu schützen."),
+              tags$li("Impffortschritt überwachen: Die Impfstatistiken auf dem Dashboard geben Aufschluss darüber, wie weit die Impfkampagnen fortgeschritten sind. Dies ist entscheidend, um die Herdenimmunität zu erreichen und die Ausbreitung des Virus zu verlangsamen."),
+              tags$li("Globales Verständnis fördern: COVID-19 betrifft die ganze Welt. Durch das Verstehen globaler Trends und Auswirkungen können wir besser zusammenarbeiten, um die Pandemie einzudämmen und gemeinsam Lösungen zu finden.")
+            ),
+            h3("Wie das Dashboard Ihnen hilft"),
+            tags$ul(
+              tags$li("Aktuelle Daten: Wir aktualisieren regelmäßig die Daten, um Ihnen stets die neuesten Informationen zur Verfügung zu stellen."),
+              tags$li("Interaktive Visualisierungen: Grafiken und Karten erleichtern das Verständnis komplexer Zusammenhänge."),
+              tags$li("Zusammenarbeit fördern: Das Dashboard dient als Plattform für den Austausch von Informationen und Erfahrungen, um eine stärkere Gemeinschaftsantwort zu fördern.")
+            ),
+            h3("Unsere Quellen"),
+            h4("Die Daten für dieses Dashboard werden aus folgenden Quellen bezogen:"),
+            tags$ul(
+              tags$li("Weltgesundheitsorganisation (WHO)"),
+              tags$li("Robert Koch-Institut (RKI)"),
+            ),
+            
+            p("Wir hoffen, dass dieses Dashboard nicht nur als Informationsquelle dient, sondern auch dazu beiträgt, das Bewusstsein für die Bedeutung gemeinsamer Anstrengungen zur Bewältigung der COVID-19-Pandemie zu stärken.")
+            )
+    ),
     # Deutschland Tab-Inhalt
     tabItem(tabName = "deutschland",
             h2("Informationen über die COVID-19-Pandemie in Deutschland, einschließlich Fallzahlen und Todesfälle sowie Impfungen nach den Berichten des RKI."),
@@ -170,14 +212,23 @@ body <- dashboardBody(
     ),
     # Europa Tab-Inhalt
     tabItem(tabName = "europa",
-            
-            
-            #########################
-            # HIER UI ZEUG VON ALEX #
-            #########################
-            
-            h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO.")
+            h2("Informationen über die europaweiten COVID-19-Pandemie nach den Berichten der WHO."),
+            fluidRow(
+              column(12,
+                     'Wähle ein Jahr (2020, 2021, 2022 oder Gesamt) und erkunde eine Weltkarte mit kumulierten COVID-19-Fällen für jedes Land. fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
+                     selectInput('Jahr', '', choices = c('2020' = '2020', '2021' = '2021', '2022' = '2022', 'Gesamt' = 'Gesamt')),
+                     plotlyOutput("Eu_map_plot"),
+                     h3('Statistikdaten:'),
+                     'Erhalte Zusammenfassungen und Strukturanalysen der COVID-19-Daten für Europa. Nutze Tabellen, um detaillierte Datensätze anzuzeigen. Hauptkomponentenanalyse (PCA): Erforsche die Anwendung der PCA auf ausgewählte COVID-19-Variablen. Erhalte Einblicke in die Dimensionalität der Daten und Muster.',
+                     tabsetPanel(
+                       tabPanel('Summary', verbatimTextOutput('sum')),
+                       tabPanel('Structure', verbatimTextOutput('str')),
+                       tabPanel('pca', verbatimTextOutput('pca'))
+                     )
+              )
+            )
     ),
+    
     # Welt Tab-Inhalt
     tabItem(tabName = "welt",
             h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle nach den Berichten der WHO."),
@@ -199,7 +250,7 @@ body <- dashboardBody(
 )
 
 ui <- dashboardPage(
-  dashboardHeader(title = 'Globale COVID-19-Pandemie Datenzusammentragung'),
+  dashboardHeader(title = 'COVID-19 Dashboard'),
   sidebar,
   body
 )
@@ -491,28 +542,6 @@ server <- function(input, output) {
     }
     
     return(Eu_map)
-    
-    
-    output$Eu_map_thousend <- renderPlotly({
-      Eu_map_thousend <- plot_geo(test,
-                                  locationmode = "country names",
-                                  frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~tausend,
-                  zmin = 0,
-                  zmax = ~tausend,
-                  color = 'hot',
-                  colorscale = ~tausend,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle pro 100.000",
-               font = list(family = "DM Sans"))%>%
-        config(displayModeBard = FALSE) %>%
-        style(hoverlabel = label)
-      
-      return(Eu_map_thousend)
-    })
   })
 }
 
