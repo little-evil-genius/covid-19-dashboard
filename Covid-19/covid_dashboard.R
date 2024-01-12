@@ -91,7 +91,8 @@ colnames(ergebnis)[10] <- "land"
 graph_properties <- list(
   scope = 'europe',
   landcolor = toRGB("white"),
-  color = toRGB("white")
+  color = toRGB("white"),
+  bgcolor = 'rgba(0,0,0,0)'
 )
 
 font = list(
@@ -144,43 +145,43 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   
   tags$head(
-  tags$style(HTML("
+    tags$style(HTML("
     .custom-welcome-text h1,
     .custom-welcome-text h3,
     .custom-welcome-text p {
       font-weight: bold; 
     }
   "))
-),
+  ),
   tabItems(
     # Willkommen Tab-Inhalt
     tabItem(tabName = "willkommen",
             div(class = "custom-welcome-text",
-            h1("Willkommen beim COVID-19 Dashboard", align = "center"),
-            h2("Herzlich willkommen auf unserem COVID-19 Dashboard. Diese Plattform bietet einen umfassenden Überblick über die aktuellen COVID-19-Zahlen und warum es wichtig ist, sich mit diesen Daten auseinanderzusetzen. Hier ist eine kurze Einführung:"),
-            h3("Die Bedeutung der Daten"),
-            p("Dieses Dashboard ermöglicht es Ihnen, die aktuellen Fallzahlen, Impfstatistiken und andere relevante Informationen im Zusammenhang mit COVID-19 zu verfolgen. Die Daten werden sorgfältig aus verschiedenen vertrauenswürdigen Quellen gesammelt und bieten eine zuverlässige Grundlage für Entscheidungen und Handlungen."),
-            h3("Warum ist es wichtig?"),
-            tags$ul(
-              tags$li("Informierte Entscheidungen treffen: Durch das Verfolgen der aktuellen COVID-19-Zahlen können Sie informierte Entscheidungen für sich selbst, Ihre Familie und Ihre Gemeinschaft treffen. Dies ist besonders wichtig, da die Situation sich ständig ändert."),
-              tags$li("Prävention und Schutz: Das Dashboard bietet Einblicke in die Verbreitung des Virus in verschiedenen Regionen. Diese Informationen können dazu beitragen, präventive Maßnahmen zu verstehen und zu ergreifen, um sich selbst und andere zu schützen."),
-              tags$li("Impffortschritt überwachen: Die Impfstatistiken auf dem Dashboard geben Aufschluss darüber, wie weit die Impfkampagnen fortgeschritten sind. Dies ist entscheidend, um die Herdenimmunität zu erreichen und die Ausbreitung des Virus zu verlangsamen."),
-              tags$li("Globales Verständnis fördern: COVID-19 betrifft die ganze Welt. Durch das Verstehen globaler Trends und Auswirkungen können wir besser zusammenarbeiten, um die Pandemie einzudämmen und gemeinsam Lösungen zu finden.")
-            ),
-            h3("Wie das Dashboard Ihnen hilft"),
-            tags$ul(
-              tags$li("Aktuelle Daten: Wir aktualisieren regelmäßig die Daten, um Ihnen stets die neuesten Informationen zur Verfügung zu stellen."),
-              tags$li("Interaktive Visualisierungen: Grafiken und Karten erleichtern das Verständnis komplexer Zusammenhänge."),
-              tags$li("Zusammenarbeit fördern: Das Dashboard dient als Plattform für den Austausch von Informationen und Erfahrungen, um eine stärkere Gemeinschaftsantwort zu fördern.")
-            ),
-            h3("Unsere Quellen"),
-            h4("Die Daten für dieses Dashboard werden aus folgenden Quellen bezogen:"),
-            tags$ul(
-              tags$li("Weltgesundheitsorganisation (WHO)"),
-              tags$li("Robert Koch-Institut (RKI)"),
-            ),
-            
-            p("Wir hoffen, dass dieses Dashboard nicht nur als Informationsquelle dient, sondern auch dazu beiträgt, das Bewusstsein für die Bedeutung gemeinsamer Anstrengungen zur Bewältigung der COVID-19-Pandemie zu stärken.")
+                h1("Willkommen beim COVID-19 Dashboard", align = "center"),
+                h2("Herzlich willkommen auf unserem COVID-19 Dashboard. Diese Plattform bietet einen umfassenden Überblick über die aktuellen COVID-19-Zahlen und warum es wichtig ist, sich mit diesen Daten auseinanderzusetzen. Hier ist eine kurze Einführung:"),
+                h3("Die Bedeutung der Daten"),
+                p("Dieses Dashboard ermöglicht es Ihnen, die aktuellen Fallzahlen, Impfstatistiken und andere relevante Informationen im Zusammenhang mit COVID-19 zu verfolgen. Die Daten werden sorgfältig aus verschiedenen vertrauenswürdigen Quellen gesammelt und bieten eine zuverlässige Grundlage für Entscheidungen und Handlungen."),
+                h3("Warum ist es wichtig?"),
+                tags$ul(
+                  tags$li("Informierte Entscheidungen treffen: Durch das Verfolgen der aktuellen COVID-19-Zahlen können Sie informierte Entscheidungen für sich selbst, Ihre Familie und Ihre Gemeinschaft treffen. Dies ist besonders wichtig, da die Situation sich ständig ändert."),
+                  tags$li("Prävention und Schutz: Das Dashboard bietet Einblicke in die Verbreitung des Virus in verschiedenen Regionen. Diese Informationen können dazu beitragen, präventive Maßnahmen zu verstehen und zu ergreifen, um sich selbst und andere zu schützen."),
+                  tags$li("Impffortschritt überwachen: Die Impfstatistiken auf dem Dashboard geben Aufschluss darüber, wie weit die Impfkampagnen fortgeschritten sind. Dies ist entscheidend, um die Herdenimmunität zu erreichen und die Ausbreitung des Virus zu verlangsamen."),
+                  tags$li("Globales Verständnis fördern: COVID-19 betrifft die ganze Welt. Durch das Verstehen globaler Trends und Auswirkungen können wir besser zusammenarbeiten, um die Pandemie einzudämmen und gemeinsam Lösungen zu finden.")
+                ),
+                h3("Wie das Dashboard Ihnen hilft"),
+                tags$ul(
+                  tags$li("Aktuelle Daten: Wir aktualisieren regelmäßig die Daten, um Ihnen stets die neuesten Informationen zur Verfügung zu stellen."),
+                  tags$li("Interaktive Visualisierungen: Grafiken und Karten erleichtern das Verständnis komplexer Zusammenhänge."),
+                  tags$li("Zusammenarbeit fördern: Das Dashboard dient als Plattform für den Austausch von Informationen und Erfahrungen, um eine stärkere Gemeinschaftsantwort zu fördern.")
+                ),
+                h3("Unsere Quellen"),
+                h4("Die Daten für dieses Dashboard werden aus folgenden Quellen bezogen:"),
+                tags$ul(
+                  tags$li("Weltgesundheitsorganisation (WHO)"),
+                  tags$li("Robert Koch-Institut (RKI)"),
+                ),
+                
+                p("Wir hoffen, dass dieses Dashboard nicht nur als Informationsquelle dient, sondern auch dazu beiträgt, das Bewusstsein für die Bedeutung gemeinsamer Anstrengungen zur Bewältigung der COVID-19-Pandemie zu stärken.")
             )
     ),
     # Deutschland Tab-Inhalt
@@ -478,7 +479,10 @@ server <- function(input, output) {
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2020",
-               font = list(family = "DM Sans")) %>%
+               font = list(family = "DM Sans"),
+               plot_bgcolor= 'transparent',
+               paper_bgcolor= 'transparent'
+               ) %>%
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
@@ -498,7 +502,10 @@ server <- function(input, output) {
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2021",
-               font = list(family = "DM Sans")) %>%
+               font = list(family = "DM Sans"),
+               plot_bgcolor= 'transparent',
+               paper_bgcolor= 'transparent'
+               ) %>%
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
@@ -518,7 +525,10 @@ server <- function(input, output) {
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2022",
-               font = list(family = "DM Sans")) %>%
+               font = list(family = "DM Sans"),
+               plot_bgcolor= 'transparent',
+               paper_bgcolor= 'transparent'
+               ) %>%
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     } else {
@@ -536,7 +546,10 @@ server <- function(input, output) {
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt",
-               font = list(family = "DM Sans")) %>%
+               font = list(family = "DM Sans"),
+               plot_bgcolor= 'transparent',
+               paper_bgcolor= 'transparent'
+               ) %>%
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
