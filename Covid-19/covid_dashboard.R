@@ -147,8 +147,8 @@ server <- function(input, output) {
     daten_merged$tooltip_text <- paste("Bundesland:", daten_merged$gen, "<br>", input$dropdown_select, ":", format_number_for_tooltip_map(selected_data))
     
     p <- ggplot(data = daten_merged) +
-      geom_sf(aes(fill = selected_data, text = tooltip_text), color = "white") +
-      scale_fill_gradient(low = "green", high = "red", na.value = NA, name = input$dropdown_select,
+      geom_sf(aes(fill = selected_data, text = tooltip_text), color = "#ffffff") +
+      scale_fill_gradient(low = "#f5b588", high = "#b61220", na.value = NA, name = input$dropdown_select,
                           labels = scales::label_number(big.mark = ".")) +  
       labs(fill = NULL) +  
       theme_minimal() +
@@ -178,7 +178,7 @@ server <- function(input, output) {
   # Erstelle das interaktive Säulendiagramm für Fälle
   output$faellePlot <- renderPlotly({
     p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt, text = Faelle_tooltip)) +
-      geom_bar(stat = "identity", fill = "blue") +
+      geom_bar(stat = "identity", fill = "#f0c8a9") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Fälle") +
       scale_x_continuous(labels = scales::label_number(big.mark = ".")) +
@@ -194,7 +194,7 @@ server <- function(input, output) {
   # Erstelle das interaktive Säulendiagramm für Todesfälle
   output$todesfaellePlot <- renderPlotly({
     p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt, text = Todesfaelle_tooltip)) +
-      geom_bar(stat = "identity", fill = "red") +
+      geom_bar(stat = "identity", fill = "#b44646") +
       theme(axis.text.y = element_text(angle = 0)) +
       labs(y = "", x = "Anzahl der Todesfälle") +
       scale_x_continuous(labels = scales::label_number(big.mark = ".")) +
@@ -226,7 +226,7 @@ server <- function(input, output) {
     # Erstelle das Balkendiagramm mit Tooltip-Text
     p <- ggplot(impfungen, aes(x = reorder(Bundesland, -datenZuZeigen), y = datenZuZeigen,
                                text = tooltip_text)) +
-      geom_bar(stat = "identity", fill = "steelblue") +
+      geom_bar(stat = "identity", fill = "#f0c8a9") +
       coord_flip() + # Um die Balken horizontal anzuzeigen
       labs(x = "", y = input$auswahl) +
       theme_minimal() +
