@@ -1,10 +1,7 @@
 library(shiny)
 library(readr)
 library(dplyr)
-library(scales)
 library(plotly)
-
-library(lubridate)
 
 
 # einlesen der Daten
@@ -60,7 +57,41 @@ neuer_datensatz <- ergebnis %>%
 neuer_datensatz$Datum <- as.Date(paste0(neuer_datensatz$Datum, "-01"))
 
 
+population <- read_csv('/Users/alex/Desktop/ShinyDashboard/eu/Countries-Europe.csv')
+
+test <- merge(neuer_datensatz, population, 
+              by.x = "land", 
+              by.y = "ISO alpha 3", 
+              all.x = TRUE)
+
+test$tausend <- test$Gesamt_pro_Monat / test$population *100000
+
+daten_fuer_pca <- eu[, c('New_cases', 'Cumulative_cases')]
+
+pca <- prcomp(daten_fuer_pca, scale = TRUE)
+
 shinyServer(function(input, output) {
+ 
+  #### Stats daten ####
+  
+  output$sum <- renderPrint({
+    summary(eu[, c('New_cases','Cumulative_cases','New_deaths','Cumulative_deaths')])
+  })
+  
+  output$pca <- renderPrint({
+    summary(pca)
+  })
+  
+  output$str <- renderPrint({
+    str(eu)
+  })
+  
+  output$data <- renderTable({
+    eu[colnames(eu)]
+  })  
+  
+  
+   
   output$Eu_map_plot <- renderPlotly({
     # Bedingte Verzweigung basierend auf der Auswahl des Jahres
     if (input$Jahr == '2020') {
@@ -75,7 +106,6 @@ shinyServer(function(input, output) {
                   color = 'hot',
                   colorscale = ~Gesamt_pro_Monat,
                   text = ~hover,
-                  reversescale = F,
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2020",
@@ -83,7 +113,7 @@ shinyServer(function(input, output) {
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
-
+    
     else if (input$Jahr == '2021') {
       # Code für das Jahr 2021
       Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2021),
@@ -96,7 +126,6 @@ shinyServer(function(input, output) {
                   color = 'hot',
                   colorscale = ~Gesamt_pro_Monat,
                   text = ~hover,
-                  reversescale = F,
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2021",
@@ -104,7 +133,7 @@ shinyServer(function(input, output) {
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
-
+    
     else if (input$Jahr == '2022') {
       # Code für das Jahr 2022
       Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2022),
@@ -117,7 +146,6 @@ shinyServer(function(input, output) {
                   color = 'hot',
                   colorscale = ~Gesamt_pro_Monat,
                   text = ~hover,
-                  reversescale = F,
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt 2022",
@@ -133,10 +161,9 @@ shinyServer(function(input, output) {
                   z = ~Gesamt_pro_Monat,
                   zmin = 0,
                   zmax = max(neuer_datensatz$Gesamt_pro_Monat),
-                  color = input$color,
+                  color = 'hot',
                   colorscale = ~Gesamt_pro_Monat,
                   text = ~hover,
-                  reversescale = F,
                   hoverinfo = 'text') %>%
         layout(geo = graph_properties,
                title = "Corona Fälle Gesamt",
@@ -144,35 +171,29 @@ shinyServer(function(input, output) {
         config(displayModeBar = FALSE) %>%
         style(hoverlabel = label)
     }
-
+    
     return(Eu_map)
+    
+    
+    output$Eu_map_thousend <- renderPlotly({
+      Eu_map_thousend <- plot_geo(test,
+                                  locationmode = "country names",
+                                  frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~tausend,
+                  zmin = 0,
+                  zmax = ~tausend,
+                  color = 'hot',
+                  colorscale = ~tausend,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle pro 100.000",
+               font = list(family = "DM Sans"))%>%
+        config(displayModeBard = FALSE) %>%
+        style(hoverlabel = label)
 
-    #### Stats daten ####
-    output$sum <- renderPrint({
-      summary(eu[, c('New_cases','Cumulative_cases','New_deaths','Cumulative_deaths')])
+      return(Eu_map_thousend)
     })
-
-    output$str <- renderPrint({
-      str(eu)
-    })
-
-    output$data <- renderTable({
-      eu[colm()]
-    })
-
   })
 })
-
-
-population <- read_csv('/Users/alex/Desktop/ShinyDashboard/eu/Countries-Europe.csv')
-
-test <- merge(neuer_datensatz, population, 
-              by.x = "land", 
-              by.y = "ISO alpha 3", 
-              all.x = TRUE)
-
-test$Ergebnis <- test$Gesamt_pro_Monat / test$population *100000
-
-#### ####
-
-
