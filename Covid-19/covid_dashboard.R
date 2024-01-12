@@ -80,7 +80,7 @@ body <- dashboardBody(
   tabItems(
     # Deutschland Tab-Inhalt
     tabItem(tabName = "deutschland",
-            h2("Informationen zur COVID-19-Impfung in Deutschland"),
+            h2("Informationen über die COVID-19-Pandemie in Deutschland, einschließlich Fallzahlen und Todesfälle sowie Impfungen nach den Berichten des RKI."),
             fluidRow(
               column(6,
                      selectInput("dropdown_select", "Wähle Daten aus:", choices = c("Infektionen", "Todesfälle")),
@@ -111,7 +111,7 @@ body <- dashboardBody(
     ),
     # Welt Tab-Inhalt
     tabItem(tabName = "welt",
-            h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle sowie Impfungen nach den Berichten der WHO."),
+            h2("Informationen über die weltweite COVID-19-Pandemie, einschließlich Fallzahlen und Todesfälle nach den Berichten der WHO."),
             fluidRow(
               column(6,
                      selectInput("selected_year", "Jahr (2020-2023):", choices = unique(data_cases$Year))
