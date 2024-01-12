@@ -8,6 +8,16 @@ library(dplyr)
 library(plotly)
 library(scales)
 library(lubridate)
+library(DT)
+library(shinyauthr)
+
+# dataframe that holds usernames, passwords and other user data
+user_base <- tibble::tibble(
+  user = c("Max", "Erika"),
+  password = sapply(c("AdminPasswort", "StandardPasswort"), sodium::password_store),
+  permissions = c("admin", "standard"),
+  name = c("Max Musterman", "Erika Musterman")
+)
 
 # die CSV-Dateien einlesen
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
@@ -143,7 +153,34 @@ sidebar <- dashboardSidebar(
 )
 
 body <- dashboardBody(
-  
+  div(class = "pull-right", shinyauthr::logoutUI(id = "logout")),
+  shinyauthr::loginUI(id = "login"),
+  uiOutput("body")
+)
+
+ui <- dashboardPage(
+  dashboardHeader(title = 'COVID-19 Dashboard'),
+  sidebar,
+  body
+)
+
+server <- function(input, output) {
+credentials <- shinyauthr::loginServer(
+    id = "login",
+    data = user_base,
+    user_col = user,
+    pwd_col = password,
+    sodium_hashed = TRUE,
+    log_out = reactive(logout_init())
+    )
+    
+    logout_init <- shinyauthr::logoutServer(
+      id = "logout",
+      active = reactive(credentials()$user_auth)
+    )
+
+  output$body <- renderUI({
+  req(credentials()$user_auth)
   tags$head(
     tags$style(HTML("
     .custom-welcome-text h1,
@@ -152,8 +189,7 @@ body <- dashboardBody(
       font-weight: bold; 
     }
   "))
-  ),
-  
+  )
   tabItems(
     # Willkommen Tab-Inhalt
     tabItem(tabName = "willkommen",
@@ -253,18 +289,11 @@ body <- dashboardBody(
             )
     )
   )
-)
-
-ui <- dashboardPage(
-  dashboardHeader(title = 'COVID-19 Dashboard'),
-  sidebar,
-  body
-)
-
-server <- function(input, output) {
+})
   
   # Erstelle der interaktiven Karte für Todes- und Fälle
   output$mapOutput <- renderPlotly({
+  req(credentials()$user_auth)
     
     selected_data <- switch(input$dropdown_select,
                             "Infektionen" = daten_merged$Infektionen,
@@ -303,6 +332,7 @@ server <- function(input, output) {
   
   # Erstelle das interaktive Säulendiagramm für Fälle
   output$faellePlot <- renderPlotly({
+  req(credentials()$user_auth)
     p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Faelle_gesamt, text = Faelle_tooltip)) +
       geom_bar(stat = "identity", fill = "#f0c8a9") +
       theme(axis.text.y = element_text(angle = 0)) +
@@ -319,6 +349,7 @@ server <- function(input, output) {
   
   # Erstelle das interaktive Säulendiagramm für Todesfälle
   output$todesfaellePlot <- renderPlotly({
+  req(credentials()$user_auth)
     p <- ggplot(data = gefilterteDaten(), aes(y = MonatName, x = Todesfaelle_gesamt, text = Todesfaelle_tooltip)) +
       geom_bar(stat = "identity", fill = "#b44646") +
       theme(axis.text.y = element_text(angle = 0)) +
@@ -335,7 +366,7 @@ server <- function(input, output) {
   
   # Erstelle das Balkendiagramm für Impfdaten
   output$impfChart <- renderPlotly({
-    
+    req(credentials()$user_auth)
     datenZuZeigen <- if (input$auswahl == "Impfquote") {
       impfungen$Impfquote
     } else {
@@ -384,6 +415,7 @@ server <- function(input, output) {
   })
   
   output$world_map_cases <- renderPlotly({
+  req(credentials()$user_auth)
     fig <- plot_ly(
       data = filtered_data_cases(),
       type = 'choropleth',
@@ -416,6 +448,7 @@ server <- function(input, output) {
   })
   
   output$world_map_deaths <- renderPlotly({
+  req(credentials()$user_auth)
     fig <- plot_ly(
       data = filtered_data_deaths(),
       type = 'choropleth',
@@ -468,6 +501,7 @@ server <- function(input, output) {
   
   
   output$Eu_map_plot <- renderPlotly({
+  req(credentials()$user_auth)
     # Bedingte Verzweigung basierend auf der Auswahl des Jahres
     if (input$Jahr == '2020') {
       # Code für das Jahr 2020
