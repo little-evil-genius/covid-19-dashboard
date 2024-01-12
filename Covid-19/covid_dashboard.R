@@ -8,208 +8,15 @@ library(plotly)
 library(scales)
 library(lubridate)
 
-
-
-# einlesen der Daten
-COVID_full_df <- read_csv("/Users/alex/Desktop/ShinyDashboard/eu/WHO-COVID-19-global-data.csv")
-
-# einlesen der conversion Datei für iso 3 code
-alpha2_3 <- read_csv('/Users/alex/Desktop/ShinyDashboard/eu/countries_codes_and_coordinates.csv')
-
-# Covid Datensatz als Eu Datensatz reduziert
-eu <- COVID_full_df%>%
-  filter(WHO_region == "EURO")
-
-# Merging der beiden Daten
-ergebnis <- merge(COVID_full_df, alpha2_3, 
-                  by.x = "Country_code", 
-                  by.y = "Alpha-2 code", 
-                  all.x = TRUE)
-
-
-# Umbenennung der Spalte 10 in "land"
-colnames(ergebnis)[10] <- "land"
-
-### properties für plot
-graph_properties <- list(
-  scope = 'europe',
-  landcolor = toRGB("white"),
-  color = toRGB("white")
-)
-
-font = list(
-  family = "DM Sans",
-  size = 15,
-  color = "black"
-)
-
-label = list(
-  bgcolor = "#EEEEEE",
-  bordercolor = "transparent",
-  font = font
-)
-
-
-
-# Datenverarbeitung
-neuer_datensatz <- ergebnis %>%
-  filter(WHO_region == "EURO") %>%
-  group_by(land, Country.y, Datum = format(Date_reported, "%Y-%m")) %>%
-  summarise(Gesamt_pro_Monat = max(Cumulative_cases, na.rm = TRUE)) %>%
-  mutate(hover = paste0(Country.y, "\n",
-                        format(round(Gesamt_pro_Monat,2),
-                               decimal.mark = ",", big.mark = ".")))
-
-neuer_datensatz$Datum <- as.Date(paste0(neuer_datensatz$Datum, "-01"))
-
-
-population <- read_csv('/Users/alex/Desktop/ShinyDashboard/eu/Countries-Europe.csv')
-
-test <- merge(neuer_datensatz, population, 
-              by.x = "land", 
-              by.y = "ISO alpha 3", 
-              all.x = TRUE)
-
-test$tausend <- test$Gesamt_pro_Monat / test$population *100000
-
-daten_fuer_pca <- eu[, c('New_cases', 'Cumulative_cases')]
-
-pca <- prcomp(daten_fuer_pca, scale = TRUE)
-
-shinyServer(function(input, output) {
- 
-  #### Stats daten ####
-  
-  output$sum <- renderPrint({
-    summary(eu[, c('New_cases','Cumulative_cases','New_deaths','Cumulative_deaths')])
-  })
-  
-  output$pca <- renderPrint({
-    summary(pca)
-  })
-  
-  output$str <- renderPrint({
-    str(eu)
-  })
-  
-  output$data <- renderTable({
-    eu[colnames(eu)]
-  })  
-  
-  
-   
-  output$Eu_map_plot <- renderPlotly({
-    # Bedingte Verzweigung basierend auf der Auswahl des Jahres
-    if (input$Jahr == '2020') {
-      # Code für das Jahr 2020
-      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2020),
-                         locationmode = "ISO-3",
-                         frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~Gesamt_pro_Monat,
-                  zmin = min(neuer_datensatz$Gesamt_pro_Monat),
-                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
-                  color = 'hot',
-                  colorscale = ~Gesamt_pro_Monat,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle Gesamt 2020",
-               font = list(family = "DM Sans")) %>%
-        config(displayModeBar = FALSE) %>%
-        style(hoverlabel = label)
-    }
-    
-    else if (input$Jahr == '2021') {
-      # Code für das Jahr 2021
-      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2021),
-                         locationmode = "ISO-3",
-                         frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~Gesamt_pro_Monat,
-                  zmin = 0,
-                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
-                  color = 'hot',
-                  colorscale = ~Gesamt_pro_Monat,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle Gesamt 2021",
-               font = list(family = "DM Sans")) %>%
-        config(displayModeBar = FALSE) %>%
-        style(hoverlabel = label)
-    }
-    
-    else if (input$Jahr == '2022') {
-      # Code für das Jahr 2022
-      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2022),
-                         locationmode = "ISO-3",
-                         frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~Gesamt_pro_Monat,
-                  zmin = 0,
-                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
-                  color = 'hot',
-                  colorscale = ~Gesamt_pro_Monat,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle Gesamt 2022",
-               font = list(family = "DM Sans")) %>%
-        config(displayModeBar = FALSE) %>%
-        style(hoverlabel = label)
-    } else {
-      # Code für die Gesamtansicht
-      Eu_map <- plot_geo(neuer_datensatz,
-                         locationmode = "ISO-3",
-                         frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~Gesamt_pro_Monat,
-                  zmin = 0,
-                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
-                  color = 'hot',
-                  colorscale = ~Gesamt_pro_Monat,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle Gesamt",
-               font = list(family = "DM Sans")) %>%
-        config(displayModeBar = FALSE) %>%
-        style(hoverlabel = label)
-    }
-    
-    return(Eu_map)
-    
-    
-    output$Eu_map_thousend <- renderPlotly({
-      Eu_map_thousend <- plot_geo(test,
-                                  locationmode = "country names",
-                                  frame = ~Datum) %>%
-        add_trace(locations = ~land,
-                  z = ~tausend,
-                  zmin = 0,
-                  zmax = ~tausend,
-                  color = 'hot',
-                  colorscale = ~tausend,
-                  text = ~hover,
-                  hoverinfo = 'text') %>%
-        layout(geo = graph_properties,
-               title = "Corona Fälle pro 100.000",
-               font = list(family = "DM Sans"))%>%
-        config(displayModeBard = FALSE) %>%
-        style(hoverlabel = label)
-
-      return(Eu_map_thousend)
-    })
-  })
-})
-
-
 # die CSV-Dateien einlesen
 daten <- read_csv('faelle-todesfaelle-deutschland-monat-jahr.csv')
 impfungen <- read_csv('impfen-bundeslaender.csv')
 infektionsdaten <- read_csv('gesamt-zahlen-bundeslaender.csv')
 data <- read_csv('WHO-COVID-19-global-data.csv')
+COVID_full_df <- read_csv('WHO-COVID-19-global-data.csv')
+
+# einlesen der conversion Datei für iso 3 code
+alpha2_3 <- read_csv('countries_codes_and_coordinates.csv')
 
 # Geodaten für Deutschland laden
 deutschland_geodaten <- st_read("germany_map.geojson")
@@ -265,6 +72,65 @@ data_deaths <- data %>%
   group_by(Country, Year) %>%
   summarise(Total_Cumulative_deaths = max(Cumulative_deaths))
 
+# Covid Datensatz als Eu Datensatz reduziert
+eu <- COVID_full_df%>%
+  filter(WHO_region == "EURO")
+
+# Merging der beiden Daten
+ergebnis <- merge(COVID_full_df, alpha2_3, 
+                  by.x = "Country_code", 
+                  by.y = "Alpha-2 code", 
+                  all.x = TRUE)
+
+
+# Umbenennung der Spalte 10 in "land"
+colnames(ergebnis)[10] <- "land"
+
+### properties für plot
+graph_properties <- list(
+  scope = 'europe',
+  landcolor = toRGB("white"),
+  color = toRGB("white")
+)
+
+font = list(
+  family = "DM Sans",
+  size = 15,
+  color = "black"
+)
+
+label = list(
+  bgcolor = "#EEEEEE",
+  bordercolor = "transparent",
+  font = font
+)
+
+
+# Datenverarbeitung
+neuer_datensatz <- ergebnis %>%
+  filter(WHO_region == "EURO") %>%
+  group_by(land, Country.y, Datum = format(Date_reported, "%Y-%m")) %>%
+  summarise(Gesamt_pro_Monat = max(Cumulative_cases, na.rm = TRUE)) %>%
+  mutate(hover = paste0(Country.y, "\n",
+                        format(round(Gesamt_pro_Monat,2),
+                               decimal.mark = ",", big.mark = ".")))
+
+neuer_datensatz$Datum <- as.Date(paste0(neuer_datensatz$Datum, "-01"))
+
+
+population <- read_csv('Countries-Europe.csv')
+
+test <- merge(neuer_datensatz, population, 
+              by.x = "land", 
+              by.y = "ISO alpha 3", 
+              all.x = TRUE)
+
+test$tausend <- test$Gesamt_pro_Monat / test$population *100000
+
+daten_fuer_pca <- eu[, c('New_cases', 'Cumulative_cases')]
+
+pca <- prcomp(daten_fuer_pca, scale = TRUE)
+
 sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Deutschland", tabName = "deutschland"),
@@ -304,55 +170,7 @@ body <- dashboardBody(
     ),
     # Europa Tab-Inhalt
     tabItem(tabName = "europa",
-            h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO."),
-                     navlistPanel(
-           "Menüleiste Europa",
-           
-           tabPanel("Willkommen",
-                    h2("Corona-Dashboard", align = "center"),
-                    h4("Überblick"),
-                    "Willkommen zum Corona-Dashboard! Dieses interaktive Dashboard bietet eine 
-           visuelle Darstellung von COVID-19-Daten für europäische Länder. Hier sind einige 
-           wichtige Informationen und Funktionen:"
-           ),
-           
-           tabPanel("Corona Fälle Gesamt", 
-                    h3("Europakarte der COVID-19-Fälle:"),
-                    'Wähle ein Jahr (2020, 2021, 2022 oder Gesamt) und erkunde eine Weltkarte mit 
-kumulierten COVID-19-Fällen für jedes Land.
-fahre mit der Maus über die Länder, um detaillierte Informationen anzuzeigen.',
-                    selectInput('Jahr',
-                                '',
-                                choices = c('2020' = '2020',
-                                            '2021' = '2021',
-                                            '2022' = '2022',
-                                            'Gesamt' = 'Gesamt')
-                    ),
-                    ####Eu_map_plot####           
-                    plotlyOutput("Eu_map_plot"),
-                    
-                    h3('Statistikdaten:'),
-                    'Erhalte Zusammenfassungen und Strukturanalysen der COVID-19-Daten für Europa.
-Nutze Tabellen, um detaillierte Datensätze anzuzeigen.
-Hauptkomponentenanalyse (PCA):
-
-Erforsche die Anwendung der PCA auf ausgewählte COVID-19-Variablen.
-Erhalte Einblicke in die Dimensionalität der Daten und Muster.',
-                    tabsetPanel(
-                      tabPanel('Summary', verbatimTextOutput('sum')),
-                      tabPanel('Structure', verbatimTextOutput('str')),
-                      tabPanel('pca', verbatimTextOutput('pca'))
-                    )
-           ),
-           
-           #### Tab Todesfälle pro 100.000 Deutschland#####
-           
-           tabPanel("Todesfälle pro 100.000", 
-                    "Content for Subsection 2.2",
-                    plotlyOutput("Eu_map_thousend")
-           )
-         )
-),
+            h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO.")
     ),
     # Welt Tab-Inhalt
     tabItem(tabName = "welt",
@@ -564,6 +382,131 @@ server <- function(input, output) {
       )
     
     return(fig)
+  })
+  
+  #### Stats daten ####
+  
+  output$sum <- renderPrint({
+    summary(eu[, c('New_cases','Cumulative_cases','New_deaths','Cumulative_deaths')])
+  })
+  
+  output$pca <- renderPrint({
+    summary(pca)
+  })
+  
+  output$str <- renderPrint({
+    str(eu)
+  })
+  
+  output$data <- renderTable({
+    eu[colnames(eu)]
+  })  
+  
+  
+  
+  output$Eu_map_plot <- renderPlotly({
+    # Bedingte Verzweigung basierend auf der Auswahl des Jahres
+    if (input$Jahr == '2020') {
+      # Code für das Jahr 2020
+      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2020),
+                         locationmode = "ISO-3",
+                         frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~Gesamt_pro_Monat,
+                  zmin = min(neuer_datensatz$Gesamt_pro_Monat),
+                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
+                  color = 'hot',
+                  colorscale = ~Gesamt_pro_Monat,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle Gesamt 2020",
+               font = list(family = "DM Sans")) %>%
+        config(displayModeBar = FALSE) %>%
+        style(hoverlabel = label)
+    }
+    
+    else if (input$Jahr == '2021') {
+      # Code für das Jahr 2021
+      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2021),
+                         locationmode = "ISO-3",
+                         frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~Gesamt_pro_Monat,
+                  zmin = 0,
+                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
+                  color = 'hot',
+                  colorscale = ~Gesamt_pro_Monat,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle Gesamt 2021",
+               font = list(family = "DM Sans")) %>%
+        config(displayModeBar = FALSE) %>%
+        style(hoverlabel = label)
+    }
+    
+    else if (input$Jahr == '2022') {
+      # Code für das Jahr 2022
+      Eu_map <- plot_geo(neuer_datensatz %>% filter(year(Datum) == 2022),
+                         locationmode = "ISO-3",
+                         frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~Gesamt_pro_Monat,
+                  zmin = 0,
+                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
+                  color = 'hot',
+                  colorscale = ~Gesamt_pro_Monat,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle Gesamt 2022",
+               font = list(family = "DM Sans")) %>%
+        config(displayModeBar = FALSE) %>%
+        style(hoverlabel = label)
+    } else {
+      # Code für die Gesamtansicht
+      Eu_map <- plot_geo(neuer_datensatz,
+                         locationmode = "ISO-3",
+                         frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~Gesamt_pro_Monat,
+                  zmin = 0,
+                  zmax = max(neuer_datensatz$Gesamt_pro_Monat),
+                  color = 'hot',
+                  colorscale = ~Gesamt_pro_Monat,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle Gesamt",
+               font = list(family = "DM Sans")) %>%
+        config(displayModeBar = FALSE) %>%
+        style(hoverlabel = label)
+    }
+    
+    return(Eu_map)
+    
+    
+    output$Eu_map_thousend <- renderPlotly({
+      Eu_map_thousend <- plot_geo(test,
+                                  locationmode = "country names",
+                                  frame = ~Datum) %>%
+        add_trace(locations = ~land,
+                  z = ~tausend,
+                  zmin = 0,
+                  zmax = ~tausend,
+                  color = 'hot',
+                  colorscale = ~tausend,
+                  text = ~hover,
+                  hoverinfo = 'text') %>%
+        layout(geo = graph_properties,
+               title = "Corona Fälle pro 100.000",
+               font = list(family = "DM Sans"))%>%
+        config(displayModeBard = FALSE) %>%
+        style(hoverlabel = label)
+      
+      return(Eu_map_thousend)
+    })
   })
 }
 
