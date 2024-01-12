@@ -170,6 +170,12 @@ body <- dashboardBody(
     ),
     # Europa Tab-Inhalt
     tabItem(tabName = "europa",
+            
+            
+            #########################
+            # HIER UI ZEUG VON ALEX #
+            #########################
+            
             h2("Informationen zu den Fallzahlen, Todesfällen und Impfungen in Europa im Rahmen der COVID-19-Pandemie gemäß den Berichten der WHO.")
     ),
     # Welt Tab-Inhalt
