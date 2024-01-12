@@ -274,13 +274,16 @@ server <- function(input, output) {
           showframe = FALSE,
           showcoastlines = TRUE,
           projection = list(type = 'mercator', center = list(lon = 0)),
+          bgcolor = 'rgba(0,0,0,0)',
           lataxis = list(range = c(-60, 90)),  
           lonaxis = list(range = c(-180, 180))  
         ),
         width = 1280,
         height = 450,
         margin = list(l = 50),
-        colorbar = list(title = NULL)  # Hier wird die Überschrift der Legende entfernt
+        colorbar = list(title = NULL),  # Hier wird die Überschrift der Legende entfernt
+        plot_bgcolor= 'transparent',
+        paper_bgcolor= 'transparent'
       )
     
     return(fig)
@@ -303,13 +306,16 @@ server <- function(input, output) {
           showframe = FALSE,
           showcoastlines = TRUE,
           projection = list(type = 'mercator', center = list(lon = 0)),
+          bgcolor = 'rgba(0,0,0,0)',
           lataxis = list(range = c(-60, 90)),  
           lonaxis = list(range = c(-180, 180))  
         ),
         width = 1280,
         height = 450,
         margin = list(l = 50),
-        colorbar = list(title = NULL)  
+        colorbar = list(title = NULL),
+        plot_bgcolor= 'transparent',
+        paper_bgcolor= 'transparent'
       )
     
     return(fig)
