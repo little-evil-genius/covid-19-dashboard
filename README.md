@@ -1,6 +1,5 @@
 # covid-19-dashboard
-TH-Wildau - Dashboard für Datenbanken &amp; Datenstrukturen zu Covid 19.<br>
-Von Vanessa Gimmel, Maurice Steiger, Alexander Kupka, Lara Hasse
+TH-Wildau - Dashboard für Datenbanken &amp; Datenstrukturen zu Covid 19.
 
 # Datensatz
 - https://www.kaggle.com/datasets/mohammadrezagim/who-covid-19-global-data?select=WHO-COVID-19-global-data.csv
